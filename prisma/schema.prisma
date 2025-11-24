@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// NOTE: SQLite doesn't support Enums, so we removed them.
+// We will use plain Strings for "Role" and "OrderStatus".
+
+model User {
+  id        String      @id @default(cuid())
+  email     String      @unique
+  name      String?
+  password  String      // Added: Required for Admin Login
+  role      String      @default("USER") // Was Enum, now String
+  orders    Order[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  products  Product[]
+  parentId  String?
+  parent    Category?  @relation("CategoryToParent", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryToParent")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Product {
+  id            String           @id @default(cuid())
+  title         String
+  slug          String           @unique
+  description   String?
+  categoryId    String?
+  category      Category?        @relation(fields: [categoryId], references: [id])
+  isFeatured    Boolean          @default(false)
+  active        Boolean          @default(true)
+  basePrice     Decimal          @default(0)
+  variants      ProductVariant[]
+  images        ProductImage[]
+  options       ProductOption[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([isFeatured, active])
+  @@index([categoryId])
+}
+
+model ProductImage {
+  id         String   @id @default(cuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  storageKey String
+  url        String
+  alt        String?
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+}
+
+model ProductOption {
+  id         String              @id @default(cuid())
+  productId  String
+  product    Product             @relation(fields: [productId], references: [id])
+  name       String
+  values     ProductOptionValue[]
+}
+
+model ProductOptionValue {
+  id            String                 @id @default(cuid())
+  optionId      String
+  option        ProductOption          @relation(fields: [optionId], references: [id])
+  value         String
+  variants      ProductVariantOptionValue[]
+  createdAt     DateTime               @default(now())
+}
+
+model ProductVariant {
+  id             String                        @id @default(cuid())
+  productId      String
+  product        Product                       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku            String                        @unique
+  price          Decimal
+  stock          Int                           @default(0)
+  weightGrams    Int?
+  material       String?
+  color          String?
+  size           String?
+  optionValues   ProductVariantOptionValue[]
+  images         ProductVariantImage[]
+  orderItems     OrderItem[]                   
+  createdAt      DateTime                      @default(now())
+  updatedAt      DateTime                      @updatedAt
+  isActive       Boolean                       @default(true)
+
+  @@index([productId])
+  @@index([isActive])
+}
+
+model ProductVariantOptionValue {
+  variantId String
+  variant   ProductVariant     @relation(fields: [variantId], references: [id])
+  valueId   String
+  value     ProductOptionValue @relation(fields: [valueId], references: [id])
+
+  @@id([variantId, valueId])
+}
+
+model ProductVariantImage {
+  id         String         @id @default(cuid())
+  variantId  String
+  variant    ProductVariant  @relation(fields: [variantId], references: [id])
+  storageKey String
+  url        String
+  alt        String?
+  position   Int             @default(0)
+  createdAt  DateTime        @default(now())
+}
+
+model Order {
+  id             String      @id @default(cuid())
+  
+  // Link to User (Optional - if they are logged in)
+  userId         String?
+  user           User?       @relation(fields: [userId], references: [id])
+
+  // Guest / Shipping Info
+  customerEmail  String      
+  customerName   String
+  addressLine1   String
+  city           String
+  zipCode        String
+  
+  status         String      @default("PENDING") // Was Enum, now String
+  items          OrderItem[]
+  total          Decimal     @default(0)
+  
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model OrderItem {
+  id          String         @id @default(cuid())
+  orderId     String
+  order       Order          @relation(fields: [orderId], references: [id])
+  variantId   String
+  variant     ProductVariant @relation(fields: [variantId], references: [id])
+  quantity    Int            @default(1)
+  unitPrice   Decimal
+  createdAt   DateTime       @default(now())
+}
+
+model ThemeSetting {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  data        String    // Was Json, now String (SQLite limitation)
+  active      Boolean   @default(false)
+  siteConfigs SiteConfig[] 
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model SiteConfig {
+  id            Int       @id @default(1)
+  activeThemeId String?
+  activeTheme   ThemeSetting? @relation(fields: [activeThemeId], references: [id])
+  updatedAt     DateTime  @updatedAt
+}
