@@ -1,130 +1,51 @@
-# Family Store E-Commerce (Scalable Architecture)
+# 🏺 Handcrafted Heritage Store (Portable Edition)
 
-This project is a Next.js (App Router) e-commerce platform architected to start as a **single product store** and evolve into a **multi-category marketplace** with minimal refactoring. It emphasizes clean architecture, storage-agnostic design, and a dynamic theming engine.
+> A scalable E-Commerce platform for traditional handcrafted vessels.
+> **Portable Version:** Runs on a local SQLite database (No Docker required).
 
-## Tech Stack
-- Next.js 16 (App Router)
-- TypeScript
-- Tailwind CSS (CSS Variables mapped in `tailwind.config.ts`)
-- Zustand (cart + theme state)
-- Prisma + PostgreSQL
-- React Hook Form + Zod (forms + validation)
-- Shadcn/UI compatible styling utilities (can be added)
+![Status](https://img.shields.io/badge/Status-In%20Development-yellow?style=flat-square)
+![Tech](https://img.shields.io/badge/Stack-Next.js_15_%7C_Tailwind_%7C_SQLite-black?style=flat-square)
 
-## Architecture Overview
-```
-src/
-	app/
-		(shop)/
-			layout.tsx
-			page.tsx
-			product/[slug]/page.tsx
-			category/[slug]/page.tsx
-			cart/page.tsx
-		(admin)/
-			layout.tsx
-			dashboard/page.tsx
-			products/
-				page.tsx
-				new/page.tsx
-				[id]/edit/page.tsx
-			variants/[productId]/page.tsx
-			themes/page.tsx
-			orders/
-				page.tsx
-				[id]/page.tsx
-	server/
-		db/prisma.ts
-		repositories/product.repository.ts
-		services/product.service.ts
-		services/storage/
-			storage.interface.ts
-			storage.service.ts
-			providers/
-				local.provider.ts
-				s3.provider.ts
-	lib/state/
-		cartStore.ts
-		themeStore.ts
-	ui/providers/ThemeProvider.tsx
-	prisma/
-		schema.prisma
-		seed.ts
-```
+---
 
-## Storage Agnostic Design
-Environment variable `STORAGE_DRIVER` selects implementation (`local` | `s3`). Code consuming storage uses `StorageService` which proxies the selected provider implementing `IStorageProvider`.
+## ✨ Features
 
-Switch provider:
-```env
-STORAGE_DRIVER=local
-# or
-STORAGE_DRIVER=s3
-```
-No component or business logic changes required.
+*   🛒 **Guest Checkout:** Buy without creating an account.
+*   🎨 **Dynamic Themes:** "Earthen" color palette.
+*   📦 **Inventory:** Real-time stock tracking.
+*   📂 **Zero-Config Database:** Uses a local `dev.db` file.
 
-## Dynamic Theme Engine
-Themes are stored in Zustand (`themeStore.ts`) and injected at runtime by `ThemeProvider`, applying CSS variables to `:root`. Tailwind references these via `tailwind.config.ts`. Additional themes can be registered dynamically or persisted in the database (see `ThemeSetting` model and seed script).
+---
 
-## Database Schema Highlights
-- `Product` generic parent; `ProductVariant` holds SKU-specific data.
-- `ProductOption` / `ProductOptionValue` model flexible option axes (Color, Material, Size, etc.).
-- `ProductVariantOptionValue` join maps variant -> option values (supports arbitrary combinations).
-- `isFeatured` flag enables curated marketing exposure without structural changes.
-- `ThemeSetting` + `SiteConfig` enable DB-driven active theme selection.
-- Order workflow via `OrderStatus` enum (`PENDING -> SHIPPED -> DELIVERED` / `CANCELLED`).
+## 🚀 Quick Start Guide
 
-## Getting Started
-### 1. Install Dependencies
-```powershell
+Follow these steps to run the store on your computer.
+
+### 1. Prerequisites
+You only need **one thing** installed:
+*   [Node.js](https://nodejs.org/) (LTS Version 18 or higher)
+
+### 2. Setup
+Open your terminal (Command Prompt or VS Code Terminal) in this folder and run:
+
+```bash
+# Install dependencies
 npm install
 ```
+### 3. Creating Database
+```bash
+# 1. Create the 'dev.db' file
+npx prisma migrate dev --name init_sqlite
 
-### 2. Environment Variables
-Create `.env`:
-```env
-DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DBNAME
-STORAGE_DRIVER=local
-CDN_BASE_URL=https://cdn.example.com # optional for s3
+# 2. Add the products (Copper/Brass/Clay Vessels)
+npx tsx prisma/seed.ts
 ```
 
-### 3. Prisma Setup
-```powershell
-npx prisma migrate dev --name init
-npx ts-node prisma/seed.ts
-```
-(Install `ts-node` globally or add as dev dep if preferred.)
-
-### 4. Run Dev Server
-```powershell
+### 4. Run the website
+```bash
 npm run dev
 ```
+Open your browser and go to:
+👉 http://localhost:3000
 
-### 5. Admin Access
-Set a cookie `role=ADMIN` manually (placeholder auth). Middleware blocks `/ (admin)` routes if role mismatch. Integrate real auth later (NextAuth, custom, etc.).
-
-## Extending
-- Add new storage provider: implement `IStorageProvider`, add case in `storage.service.ts`.
-- Add theme in DB: insert into `ThemeSetting`, toggle `active` and update `SiteConfig.activeThemeId`.
-- Add product option axis: create new `ProductOption` + values; variants can include them without schema changes.
-
-## Roadmap Suggestions
-- Replace placeholder S3 provider with AWS SDK v3 integration.
-- Form components using RHF + Zod for product/variant editing.
-- Image uploads via route handlers using `StorageService.uploadFile`.
-- Public-facing category navigation + search.
-- Caching layer (Edge / Redis) for product listing performance.
-
-## Scripts
-- `npm run dev` — start Next.js
-- `npm run build` — production build
-- `npm run start` — start built app
-- `npx prisma studio` — inspect DB
-
-## Reliability Notes
-- Single source of truth via Prisma models.
-- All variant option combinations explicitly persisted (no dynamic Cartesian explosion at runtime).
-- Storage abstraction prevents vendor lock-in.
-
-## License
-Private / Family Business Use.
+# For any Error you can use help of AI 😂😂
